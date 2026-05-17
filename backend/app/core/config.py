@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
     
+    # OpenAI Settings
+    OPENAI_API_KEY: str = "sk-mock-key"
+    OPENAI_API_BASE: str = "https://api.openai.com/v1"
+    EMBEDDING_MODEL_NAME: str = "text-embedding-3-small"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

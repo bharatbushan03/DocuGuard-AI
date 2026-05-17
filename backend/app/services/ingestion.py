@@ -45,6 +45,8 @@ def extract_pages_from_file(file_path: str, mime_type: str) -> list:
         raise e
 
 from app.services.chunking import chunk_text
+from app.services.embedding import embed_batch
+from app.services.vector_db import store_vectors
 
 def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
     # 1. Validation
@@ -87,6 +89,7 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
         pages = extract_pages_from_file(file_path, db_doc.file_type)
         
         chunk_index = 0
+        all_chunks_data = []
         for page in pages:
             chunks_data = chunk_text(
                 text=page["text"],
@@ -96,22 +99,53 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
                 chunk_index=chunk_index,
                 start_chunk_index=chunk_index
             )
-            
-            for chunk_data in chunks_data:
-                db_chunk = DocumentChunk(
-                    document_id=db_doc.id,
-                    chunk_index=chunk_data["chunk_index"],
-                    content=chunk_data["content"],
-                    metadata_={
-                        "filename": chunk_data["filename"],
-                        "page_number": chunk_data["page_number"],
-                        "section_title": chunk_data.get("section_title")
-                    }
-                )
-                db.add(db_chunk)
-            
+            all_chunks_data.extend(chunks_data)
             chunk_index += len(chunks_data)
+            
+        # 5. Save chunks to DB to get IDs
+        db_chunks = []
+        for chunk_data in all_chunks_data:
+            db_chunk = DocumentChunk(
+                document_id=db_doc.id,
+                chunk_index=chunk_data["chunk_index"],
+                content=chunk_data["content"],
+                metadata_={
+                    "filename": chunk_data["filename"],
+                    "page_number": chunk_data["page_number"],
+                    "section_title": chunk_data.get("section_title")
+                }
+            )
+            db.add(db_chunk)
+            db_chunks.append(db_chunk)
+            
+        db.commit()
+        for chunk in db_chunks:
+            db.refresh(chunk)
+            
+        # 6. Embed and store in Qdrant
+        # Prepare payloads for Qdrant
+        for idx, chunk_data in enumerate(all_chunks_data):
+            chunk_data["chunk_id"] = db_chunks[idx].id
+            chunk_data["access_level"] = db_doc.access_level
+            chunk_data["uploaded_by"] = db_doc.uploaded_by
+            
+        texts_to_embed = [c["content"] for c in all_chunks_data]
         
+        # Batch embedding (using batches of 100 to avoid limits)
+        batch_size = 100
+        all_embeddings = []
+        for i in range(0, len(texts_to_embed), batch_size):
+            batch_texts = texts_to_embed[i:i + batch_size]
+            embeddings = embed_batch(batch_texts)
+            all_embeddings.extend(embeddings)
+            
+        # Store in Qdrant
+        point_ids = store_vectors(all_chunks_data, all_embeddings)
+        
+        # 7. Update DB with Qdrant Point IDs
+        for idx, point_id in enumerate(point_ids):
+            db_chunks[idx].qdrant_point_id = point_id
+            
         db_doc.status = "indexed" 
         db.commit()
         db.refresh(db_doc)
