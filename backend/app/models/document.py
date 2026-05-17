@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-# We don't import Base directly here to avoid circular imports if not managed well, 
-# but it's safe if Base is defined in its own file and imported here.
+from sqlalchemy.dialects.postgresql import JSONB
 from app.db.base import Base
 
 class Document(Base):
@@ -10,8 +9,11 @@ class Document(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
-    file_path = Column(String, nullable=False)
+    filename = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
     uploaded_by = Column(Integer, ForeignKey("users.id"))
+    access_level = Column(String, default="private")
+    status = Column(String, default="processing")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
@@ -22,7 +24,10 @@ class DocumentChunk(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     document_id = Column(Integer, ForeignKey("documents.id"))
+    chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
-    vector_id = Column(String, nullable=True) # ID in Qdrant
+    metadata_ = Column("metadata", JSONB, nullable=True)
+    qdrant_point_id = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     document = relationship("Document", back_populates="chunks")
