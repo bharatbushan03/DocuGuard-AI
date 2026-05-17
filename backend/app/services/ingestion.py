@@ -22,27 +22,29 @@ ALLOWED_MIME_TYPES = {
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def extract_text_from_file(file_path: str, mime_type: str) -> str:
+def extract_pages_from_file(file_path: str, mime_type: str) -> list:
+    pages = []
     try:
-        text = ""
         if mime_type == "application/pdf":
             doc = fitz.open(file_path)
-            for page in doc:
-                text += page.get_text() + "\n"
+            for i, page in enumerate(doc):
+                pages.append({"text": page.get_text(), "page_number": i + 1})
             doc.close()
         elif mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             doc = docx.Document(file_path)
-            for para in doc.paragraphs:
-                text += para.text + "\n"
+            text = "\n".join([para.text for para in doc.paragraphs])
+            pages.append({"text": text, "page_number": 1})
         elif mime_type in ["text/plain", "text/markdown"]:
             with open(file_path, "r", encoding="utf-8") as f:
-                text = f.read()
+                pages.append({"text": f.read(), "page_number": 1})
         else:
             raise ValueError("Unsupported file type for extraction")
-        return text
+        return pages
     except Exception as e:
         logger.error(f"Error extracting text from {file_path}: {e}")
         raise e
+
+from app.services.chunking import chunk_text
 
 def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
     # 1. Validation
@@ -65,47 +67,52 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
         raise HTTPException(status_code=500, detail="Could not save file.")
 
     # 3. Create initial DB record
-    doc_in = DocumentCreate(
+    db_doc = Document(
         title=file.filename,
         filename=file.filename,
         file_type=file.content_type,
         access_level="private",
-        uploaded_by=user_id
-    )
-    # The Document base model needs to be updated or we just create it manually since DocumentCreate schema doesn't match perfectly with the model fields directly if it doesn't have filename etc. Let's check `crud_document.py` later.
-    db_doc = Document(
-        title=doc_in.title,
-        filename=doc_in.filename,
-        file_type=doc_in.file_type,
-        access_level=doc_in.access_level,
-        uploaded_by=doc_in.uploaded_by,
+        uploaded_by=user_id,
         status="uploaded"
     )
     db.add(db_doc)
     db.commit()
     db.refresh(db_doc)
 
-    # 4. Extract Text
+    # 4. Extract Text & Chunk
     try:
         db_doc.status = "processing"
         db.commit()
 
-        text = extract_text_from_file(file_path, db_doc.file_type)
+        pages = extract_pages_from_file(file_path, db_doc.file_type)
         
-        # Simple chunking for MVP: by paragraph/line breaks or fixed size
-        chunks = text.split("\n\n")
-        chunks = [c.strip() for c in chunks if c.strip()]
-        
-        # Store chunks
-        for idx, chunk_content in enumerate(chunks):
-            db_chunk = DocumentChunk(
+        chunk_index = 0
+        for page in pages:
+            chunks_data = chunk_text(
+                text=page["text"],
                 document_id=db_doc.id,
-                chunk_index=idx,
-                content=chunk_content
+                filename=db_doc.filename,
+                page_number=page.get("page_number"),
+                chunk_index=chunk_index,
+                start_chunk_index=chunk_index
             )
-            db.add(db_chunk)
+            
+            for chunk_data in chunks_data:
+                db_chunk = DocumentChunk(
+                    document_id=db_doc.id,
+                    chunk_index=chunk_data["chunk_index"],
+                    content=chunk_data["content"],
+                    metadata_={
+                        "filename": chunk_data["filename"],
+                        "page_number": chunk_data["page_number"],
+                        "section_title": chunk_data.get("section_title")
+                    }
+                )
+                db.add(db_chunk)
+            
+            chunk_index += len(chunks_data)
         
-        db_doc.status = "indexed" # Pretending we indexed them since we don't do embeddings yet
+        db_doc.status = "indexed" 
         db.commit()
         db.refresh(db_doc)
 
