@@ -10,3 +10,6 @@ qdrant-client
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
+pymupdf
+python-docx
+
