@@ -5,8 +5,10 @@ import docx
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from app.models.document import Document, DocumentChunk
-from app.schemas.document import DocumentCreate
-from app.crud import crud_document
+from app.db.session import SessionLocal
+from app.services.chunking import chunk_text
+from app.services.embedding import embed_batch
+from app.services.vector_db import store_vectors
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,11 +46,7 @@ def extract_pages_from_file(file_path: str, mime_type: str) -> list:
         logger.error(f"Error extracting text from {file_path}: {e}")
         raise e
 
-from app.services.chunking import chunk_text
-from app.services.embedding import embed_batch
-from app.services.vector_db import store_vectors
-
-def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
+def save_uploaded_file(file: UploadFile, user_id: int, db: Session) -> Document:
     # 1. Validation
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(status_code=400, detail="Unsupported file type.")
@@ -81,13 +79,27 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
     db.commit()
     db.refresh(db_doc)
 
-    # 4. Extract Text & Chunk
+    return db_doc, file_path
+
+def process_document_background(document_id: int, file_path: str):
+    """
+    Background task to extract text, chunk, embed, and store in Qdrant.
+    """
+    logger.info(f"Starting background processing for document {document_id}")
+    db = SessionLocal()
     try:
+        db_doc = db.query(Document).filter(Document.id == document_id).first()
+        if not db_doc:
+            logger.error(f"Document {document_id} not found.")
+            return
+
         db_doc.status = "processing"
         db.commit()
 
+        # Extract Text
         pages = extract_pages_from_file(file_path, db_doc.file_type)
         
+        # Chunk Text
         chunk_index = 0
         all_chunks_data = []
         for page in pages:
@@ -102,7 +114,7 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
             all_chunks_data.extend(chunks_data)
             chunk_index += len(chunks_data)
             
-        # 5. Save chunks to DB to get IDs
+        # Save chunks to DB
         db_chunks = []
         for chunk_data in all_chunks_data:
             db_chunk = DocumentChunk(
@@ -122,8 +134,7 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
         for chunk in db_chunks:
             db.refresh(chunk)
             
-        # 6. Embed and store in Qdrant
-        # Prepare payloads for Qdrant
+        # Embed and store in Qdrant
         for idx, chunk_data in enumerate(all_chunks_data):
             chunk_data["chunk_id"] = db_chunks[idx].id
             chunk_data["access_level"] = db_doc.access_level
@@ -131,7 +142,6 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
             
         texts_to_embed = [c["content"] for c in all_chunks_data]
         
-        # Batch embedding (using batches of 100 to avoid limits)
         batch_size = 100
         all_embeddings = []
         for i in range(0, len(texts_to_embed), batch_size):
@@ -139,21 +149,21 @@ def process_upload(file: UploadFile, user_id: int, db: Session) -> Document:
             embeddings = embed_batch(batch_texts)
             all_embeddings.extend(embeddings)
             
-        # Store in Qdrant
         point_ids = store_vectors(all_chunks_data, all_embeddings)
         
-        # 7. Update DB with Qdrant Point IDs
+        # Update DB with Qdrant Point IDs
         for idx, point_id in enumerate(point_ids):
             db_chunks[idx].qdrant_point_id = point_id
             
         db_doc.status = "indexed" 
         db.commit()
-        db.refresh(db_doc)
+        logger.info(f"Successfully processed document {document_id}")
 
     except Exception as e:
-        logger.error(f"Processing failed for document {db_doc.id}: {e}")
-        db_doc.status = "failed"
-        db.commit()
-        raise HTTPException(status_code=500, detail="Failed to process document text.")
-
-    return db_doc
+        logger.error(f"Processing failed for document {document_id}: {e}")
+        db_doc = db.query(Document).filter(Document.id == document_id).first()
+        if db_doc:
+            db_doc.status = "failed"
+            db.commit()
+    finally:
+        db.close()
