@@ -14,6 +14,7 @@ from app.crud.crud_log import create_query_log
 from app.services.embedding import embed_text
 from app.services.vector_db import search_similar_chunks
 from app.services.risk_classifier import classify_risk
+from app.services.citation_verifier import verify_and_rewrite_answer
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,13 @@ User Question: {request.question}
             confidence_reasoning = parsed.get("confidence_reasoning", "")
             is_supported = "I could not find enough information" not in answer
             
+            # --- Citation Verification MVP ---
+            citation_coverage = 0.0
+            if is_supported:
+                answer, citation_coverage = verify_and_rewrite_answer(answer, chunks)
+                if not answer or answer.startswith("I could not find enough information"):
+                    is_supported = False
+            
             # Run the risk classification module
             risk_assessment = classify_risk(request.question, answer, citations)
             risk_level = risk_assessment["risk_level"]
@@ -129,7 +137,8 @@ User Question: {request.question}
     else:
         avg_score = sum(c.get("score", 0) for c in chunks) / len(chunks) if chunks else 0.0
         citation_bonus = min(len(citations) * 0.1, 0.2)
-        confidence_score = min(avg_score + citation_bonus, 0.99)
+        # Include citation coverage (40%), retrieval avg score (40%), and citation bonus (20%)
+        confidence_score = min(avg_score * 0.4 + citation_coverage * 0.4 + citation_bonus, 0.99)
         
     # 11. Store question and answer in ChatMessage and QueryLog
     session_id = request.session_id
