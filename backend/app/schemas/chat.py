@@ -34,3 +34,15 @@ class ChatSessionResponse(ChatSessionBase):
 
     class Config:
         from_attributes = True
+
+class ChatQueryRequest(BaseModel):
+    question: str
+    session_id: Optional[int] = None
+
+class ChatQueryResponse(BaseModel):
+    answer: str
+    citations: List[Dict[str, Any]]
+    confidence_score: float
+    risk_level: str
+    retrieved_chunks: List[Dict[str, Any]]
+    session_id: int

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = "sk-mock-key"
     OPENAI_API_BASE: str = "https://api.openai.com/v1"
     EMBEDDING_MODEL_NAME: str = "text-embedding-3-small"
+    LLM_MODEL_NAME: str = "gpt-4o-mini"
     
     class Config:
         env_file = ".env"
