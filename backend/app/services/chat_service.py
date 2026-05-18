@@ -51,17 +51,31 @@ def process_chat_query(db: Session, request: ChatQueryRequest, current_user: Use
         context_text += f"Content: {chunk.get('content')}\n"
         
     # 6, 7 & 8. Ask LLM using only provided context
-    prompt = f"""You are an enterprise AI assistant for DocuGuard AI.
-Answer the user's question using ONLY the provided context.
-If the answer is not contained in the context, you must state exactly: "I do not know."
-Do not make up information.
-Include citations in your response.
+    SYSTEM_PROMPT = """You are an enterprise AI assistant for DocuGuard AI.
+1. Answer only using the provided context.
+2. Never invent policy, legal, financial, or security details.
+3. Always cite the document name and chunk/page when making a claim.
+4. Say "I could not find enough information in the provided documents" when context is insufficient.
+5. Mark high-risk answers as requiring human review.
+6. Be concise but complete.
+7. Avoid giving final legal, medical, financial, or security approval.
+8. Output your answer in the exact JSON format specified by the user."""
 
-Return a JSON object with the following keys:
-- "answer": Your detailed answer.
-- "citations": A list of citations. Each citation should be an object with "filename", "page_number", and "snippet".
-- "risk_level": Classify the risk level of the question based on sensitive topics (e.g., sharing data, passwords, PII) as "low", "medium", or "high".
-- "is_supported": A boolean indicating if the context fully supports the answer.
+    USER_PROMPT = f"""Please answer the following question using the provided context.
+Return the answer in this JSON format:
+{{
+  "answer": "...",
+  "citations": [
+    {{
+      "document": "...",
+      "page": "...",
+      "chunk_id": "...",
+      "supporting_text": "..."
+    }}
+  ],
+  "confidence_reasoning": "...",
+  "requires_human_review": true or false
+}}
 
 Context:
 {context_text}
@@ -69,17 +83,18 @@ Context:
 User Question: {request.question}
 """
     
-    answer = "I do not know."
+    answer = "I could not find enough information in the provided documents"
     citations = []
     risk_level = "low"
     is_supported = False
+    confidence_reasoning = ""
     
     try:
         response = client.chat.completions.create(
             model=settings.LLM_MODEL_NAME,
             messages=[
-                {"role": "system", "content": "You are a helpful, accurate, and secure enterprise AI assistant. Always reply with valid JSON."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_PROMPT}
             ],
             response_format={"type": "json_object"},
             temperature=0.0
@@ -87,15 +102,17 @@ User Question: {request.question}
         content = response.choices[0].message.content
         if content:
             parsed = json.loads(content)
-            answer = parsed.get("answer", "I do not know.")
+            answer = parsed.get("answer", "I could not find enough information in the provided documents")
             citations = parsed.get("citations", [])
-            risk_level = parsed.get("risk_level", "low")
-            is_supported = parsed.get("is_supported", False)
+            requires_human_review = parsed.get("requires_human_review", False)
+            risk_level = "high" if requires_human_review else "low"
+            confidence_reasoning = parsed.get("confidence_reasoning", "")
+            is_supported = "I could not find enough information" not in answer
     except Exception as e:
         logger.error(f"Failed to generate LLM response: {e}")
         
     # 9. Calculate confidence score
-    if answer.strip().lower().startswith("i do not know") or not is_supported:
+    if answer.strip().lower().startswith("i could not find enough information") or not is_supported:
         confidence_score = 0.0
     else:
         avg_score = sum(c.get("score", 0) for c in chunks) / len(chunks) if chunks else 0.0
