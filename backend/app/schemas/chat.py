@@ -44,5 +44,7 @@ class ChatQueryResponse(BaseModel):
     citations: List[Dict[str, Any]]
     confidence_score: float
     risk_level: str
+    risk_reason: Optional[str] = None
+    requires_human_review: bool = False
     retrieved_chunks: List[Dict[str, Any]]
     session_id: int

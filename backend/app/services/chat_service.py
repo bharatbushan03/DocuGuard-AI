@@ -13,6 +13,7 @@ from app.crud.crud_chat import create_chat_session, create_chat_message
 from app.crud.crud_log import create_query_log
 from app.services.embedding import embed_text
 from app.services.vector_db import search_similar_chunks
+from app.services.risk_classifier import classify_risk
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,8 @@ User Question: {request.question}
     risk_level = "low"
     is_supported = False
     confidence_reasoning = ""
+    requires_human_review = False
+    risk_reason = ""
     
     try:
         response = client.chat.completions.create(
@@ -104,10 +107,19 @@ User Question: {request.question}
             parsed = json.loads(content)
             answer = parsed.get("answer", "I could not find enough information in the provided documents")
             citations = parsed.get("citations", [])
-            requires_human_review = parsed.get("requires_human_review", False)
-            risk_level = "high" if requires_human_review else "low"
+            llm_requires_review = parsed.get("requires_human_review", False)
             confidence_reasoning = parsed.get("confidence_reasoning", "")
             is_supported = "I could not find enough information" not in answer
+            
+            # Run the risk classification module
+            risk_assessment = classify_risk(request.question, answer, citations)
+            risk_level = risk_assessment["risk_level"]
+            risk_reason = risk_assessment["reason"]
+            requires_human_review = risk_assessment["requires_human_review"] or llm_requires_review
+            
+            if requires_human_review and risk_level != "high":
+                risk_level = "high"
+                risk_reason += " (Elevated to high by LLM flag)"
     except Exception as e:
         logger.error(f"Failed to generate LLM response: {e}")
         
@@ -163,6 +175,8 @@ User Question: {request.question}
         citations=citations,
         confidence_score=confidence_score,
         risk_level=risk_level,
+        risk_reason=risk_reason,
+        requires_human_review=requires_human_review,
         retrieved_chunks=chunks,
         session_id=session_id
     )
