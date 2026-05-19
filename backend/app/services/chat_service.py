@@ -15,6 +15,7 @@ from app.services.embedding import embed_text
 from app.services.vector_db import search_similar_chunks
 from app.services.risk_classifier import classify_risk
 from app.services.citation_verifier import verify_and_rewrite_answer
+from app.services.confidence_scorer import calculate_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -132,13 +133,15 @@ User Question: {request.question}
         logger.error(f"Failed to generate LLM response: {e}")
         
     # 9. Calculate confidence score
-    if answer.strip().lower().startswith("i could not find enough information") or not is_supported:
-        confidence_score = 0.0
-    else:
-        avg_score = sum(c.get("score", 0) for c in chunks) / len(chunks) if chunks else 0.0
-        citation_bonus = min(len(citations) * 0.1, 0.2)
-        # Include citation coverage (40%), retrieval avg score (40%), and citation bonus (20%)
-        confidence_score = min(avg_score * 0.4 + citation_coverage * 0.4 + citation_bonus, 0.99)
+    confidence_score = calculate_confidence(chunks, citation_coverage, answer)
+    
+    # Evaluate confidence rules
+    if confidence_score < 0.45:
+        requires_human_review = True
+        risk_reason += " (Low confidence score, human review recommended)"
+        # You could also append to the answer if the prompt specifically meant the answer text
+        if "human review is recommended" not in answer.lower():
+            answer += "\n\nNote: Confidence is low. Human review is recommended."
         
     # 11. Store question and answer in ChatMessage and QueryLog
     session_id = request.session_id

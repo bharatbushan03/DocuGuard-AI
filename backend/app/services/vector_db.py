@@ -125,7 +125,8 @@ def search_similar_chunks(query_vector: List[float], user_role: str, user_id: in
                 "chunk_id": res.payload.get("chunk_id"),
                 "filename": res.payload.get("filename"),
                 "page_number": res.payload.get("page_number"),
-                "content": res.payload.get("content")
+                "content": res.payload.get("content"),
+                "access_level": res.payload.get("access_level", "private")
             })
             
         return formatted_results
