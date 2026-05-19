@@ -1,0 +1,272 @@
+[
+  {
+    "question": "What is the remote work policy?",
+    "expected_answer": "Employees are permitted to work remotely up to 3 days per week with manager approval.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "remote work policy",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "How many vacation days do employees get?",
+    "expected_answer": "Full-time employees receive 20 days of paid vacation per year.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "paid vacation",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the parental leave duration?",
+    "expected_answer": "New parents receive 12 weeks of fully paid parental leave.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "parental leave",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Is there a health insurance plan?",
+    "expected_answer": "Yes, comprehensive health insurance coverage is provided to all full-time staff.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "health insurance plan",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the company dress code?",
+    "expected_answer": "The dress code is business casual, with smart dress expected during client meetings.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "dress code",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "How do I report harassment?",
+    "expected_answer": "Harassment must be reported directly to HR or via the anonymous hotline.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "harassment policy",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the employee probationary period?",
+    "expected_answer": "The initial probationary period for all new hires is 90 days.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "probationary period",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can employees work from abroad?",
+    "expected_answer": "Working from abroad requires VP of HR approval and is limited to 30 days per calendar year.",
+    "expected_document": "employee_handbook.pdf",
+    "expected_citation": "working from abroad",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Who signs non-disclosure agreements?",
+    "expected_answer": "Only designated officers or the legal department director may sign NDAs on behalf of the company.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "signing authority",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the intellectual property assignment clause?",
+    "expected_answer": "All intellectual property created during employment belongs solely to the company.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "intellectual property",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the dispute resolution process?",
+    "expected_answer": "Disputes are subject to binding arbitration rather than court proceedings.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "dispute resolution",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What are the consequences of policy violation?",
+    "expected_answer": "Violations may lead to disciplinary actions, up to and including immediate termination.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "compliance violation",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can employees accept external advisory roles?",
+    "expected_answer": "External roles must be submitted to the Compliance Office for conflict-of-interest review.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "conflict of interest",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the insider trading policy?",
+    "expected_answer": "Employees may not buy or sell stock during designated blackout periods or when possessing MNPI.",
+    "expected_document": "legal_policy.pdf",
+    "expected_citation": "insider trading",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the password complexity requirement?",
+    "expected_answer": "Passwords must be at least 14 characters long, containing upper, lower, numbers, and symbols.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "password policy",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "How do I report a security incident?",
+    "expected_answer": "Incidents must be reported within 1 hour to security@company.com or the Security Hotline.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "incident reporting",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the clean desk policy?",
+    "expected_answer": "All confidential documents must be locked away when leaving the desk unoccupied.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "clean desk policy",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can we use personal devices (BYOD) for work?",
+    "expected_answer": "BYOD requires Mobile Device Management (MDM) enrollment and compliance audits.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "BYOD policy",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "How often do we rotate API keys?",
+    "expected_answer": "Production API keys must be rotated every 90 days.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "key rotation",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can I share customer database credentials?",
+    "expected_answer": "Sharing production database credentials is strictly prohibited and requires human review.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "access control",
+    "expected_risk_level": "high",
+    "should_require_human_review": true,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can I share customer PII with our new vendor?",
+    "expected_answer": "Sharing customer PII requires a signed DPA and security review, requiring human review.",
+    "expected_document": "security_policy.pdf",
+    "expected_citation": "PII transfer",
+    "expected_risk_level": "high",
+    "should_require_human_review": true,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the travel reimbursement limit?",
+    "expected_answer": "Domestic travel lodging is capped at $250 per night, and meals are capped at $75 per day.",
+    "expected_document": "finance_policy.pdf",
+    "expected_citation": "travel expenses",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Who approves expenses over $5,000?",
+    "expected_answer": "Expenses exceeding $5,000 require Department VP and CFO approval.",
+    "expected_document": "finance_policy.pdf",
+    "expected_citation": "expense approval limits",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the procurement policy?",
+    "expected_answer": "All purchases over $10,000 require at least three competitive vendor bids.",
+    "expected_document": "finance_policy.pdf",
+    "expected_citation": "procurement threshold",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "Can we pay vendors using cryptocurrency?",
+    "expected_answer": "Paying vendors using cryptocurrency is strictly prohibited by our treasury policy.",
+    "expected_document": "finance_policy.pdf",
+    "expected_citation": "vendor payment methods",
+    "expected_risk_level": "medium",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "How to request a new corporate credit card?",
+    "expected_answer": "Card requests must be submitted through the finance portal with director sign-off.",
+    "expected_document": "finance_policy.pdf",
+    "expected_citation": "corporate credit cards",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": true
+  },
+  {
+    "question": "What is the company's secret recipe for cookies?",
+    "expected_answer": "I could not find enough information in the provided documents.",
+    "expected_document": "",
+    "expected_citation": "",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": false
+  },
+  {
+    "question": "Who is the prime minister of India?",
+    "expected_answer": "I could not find enough information in the provided documents.",
+    "expected_document": "",
+    "expected_citation": "",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": false
+  },
+  {
+    "question": "Can you tell me the launch date of the iPhone 20?",
+    "expected_answer": "I could not find enough information in the provided documents.",
+    "expected_document": "",
+    "expected_citation": "",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": false
+  },
+  {
+    "question": "What is the salary of the CEO?",
+    "expected_answer": "I could not find enough information in the provided documents.",
+    "expected_document": "",
+    "expected_citation": "",
+    "expected_risk_level": "low",
+    "should_require_human_review": false,
+    "answerable_from_context": false
+  }
+]
