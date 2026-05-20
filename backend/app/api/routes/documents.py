@@ -35,10 +35,16 @@ def get_document_status(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
         
-    # Check access logic: only admin or the user who uploaded it can check status 
-    # unless we assume all authenticated users can check public docs
-    if current_user.role != "admin" and doc.uploaded_by != current_user.id and doc.access_level != "public":
-        raise HTTPException(status_code=403, detail="Not enough privileges to view this document")
+    # Security: Ensure user has access to view this document
+    is_uploader = doc.uploaded_by == current_user.id
+    is_admin = current_user.role == "admin"
+    is_public = doc.access_level == "public"
+
+    if not (is_uploader or is_admin or is_public):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You do not have permission to view this document"
+        )
         
     return doc
 

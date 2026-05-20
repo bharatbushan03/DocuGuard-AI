@@ -23,11 +23,13 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     
     # JWT
+    # In production, SECRET_KEY must be provided via environment variable
     SECRET_KEY: str = "super_secret_key_change_in_production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 # Reduced to 1 day default
     
     # OpenAI Settings
+    # In production, OPENAI_API_KEY must be provided via environment variable
     OPENAI_API_KEY: str = "sk-mock-key"
     OPENAI_API_BASE: str = "https://api.openai.com/v1"
     EMBEDDING_MODEL_NAME: str = "text-embedding-3-small"

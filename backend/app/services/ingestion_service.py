@@ -10,6 +10,7 @@ from app.services.chunking import chunk_text
 from app.services.embedding import embed_batch
 from app.services.vector_db import store_vectors
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,10 @@ def save_uploaded_file(file: UploadFile, user_id: int, db: Session) -> Document:
     file.file.seek(0)
 
     # 2. Save File
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    # Use UUID for the actual file name to prevent path traversal and collisions
+    file_extension = ALLOWED_MIME_TYPES[file.content_type]
+    safe_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = os.path.join(UPLOAD_DIR, safe_filename)
     try:
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -68,8 +72,8 @@ def save_uploaded_file(file: UploadFile, user_id: int, db: Session) -> Document:
 
     # 3. Create initial DB record
     db_doc = Document(
-        title=file.filename,
-        filename=file.filename,
+        title=file.filename, # Keep original filename as title
+        filename=safe_filename, # Safe filename for storage
         file_type=file.content_type,
         access_level="private",
         uploaded_by=user_id,

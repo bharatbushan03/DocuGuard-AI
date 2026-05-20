@@ -46,7 +46,7 @@ def test_upload_document_success(mock_bg_task, client, auth_header):
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["filename"] == "test.txt"
+    assert data["title"] == "test.txt"
     assert data["status"] == "uploaded"
     # The function itself is passed to background_tasks.add_task
     # We can't easily check if add_task was called on the background_tasks object 
@@ -67,4 +67,4 @@ def test_get_documents(client, auth_header):
     assert response.status_code == 200
     data = response.json()
     assert len(data) >= 1
-    assert any(doc["filename"] == "list_test.txt" for doc in data)
+    assert any(doc["title"] == "list_test.txt" for doc in data)
