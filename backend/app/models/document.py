@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
-from app.db.base import Base
+from app.db.base_class import Base
 
 class Document(Base):
     __tablename__ = "documents"
@@ -26,7 +25,7 @@ class DocumentChunk(Base):
     document_id = Column(Integer, ForeignKey("documents.id"))
     chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
-    metadata_ = Column("metadata", JSONB, nullable=True)
+    metadata_ = Column("metadata", JSON, nullable=True)
     qdrant_point_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

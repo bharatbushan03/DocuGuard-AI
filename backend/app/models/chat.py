@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
-from app.db.base import Base
+from app.db.base_class import Base
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
@@ -22,7 +21,7 @@ class ChatMessage(Base):
     session_id = Column(Integer, ForeignKey("chat_sessions.id"))
     role = Column(String, nullable=False) # 'user' or 'assistant'
     content = Column(Text, nullable=False)
-    citations = Column(JSONB, nullable=True)
+    citations = Column(JSON, nullable=True)
     confidence_score = Column(Float, nullable=True)
     risk_level = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

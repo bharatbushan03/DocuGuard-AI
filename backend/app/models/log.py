@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, JSON
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import JSONB
-from app.db.base import Base
+from app.db.base_class import Base
 
 class QueryLog(Base):
     __tablename__ = "query_logs"
@@ -10,7 +9,7 @@ class QueryLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     query = Column(Text, nullable=False)
     answer = Column(Text, nullable=True)
-    retrieved_chunks = Column(JSONB, nullable=True)
+    retrieved_chunks = Column(JSON, nullable=True)
     confidence_score = Column(Float, nullable=True)
     risk_level = Column(String, nullable=True)
     latency_ms = Column(Float, nullable=True)

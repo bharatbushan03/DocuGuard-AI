@@ -108,7 +108,6 @@ def process_document_background(document_id: int, file_path: str):
                 document_id=db_doc.id,
                 filename=db_doc.filename,
                 page_number=page.get("page_number"),
-                chunk_index=chunk_index,
                 start_chunk_index=chunk_index
             )
             all_chunks_data.extend(chunks_data)
