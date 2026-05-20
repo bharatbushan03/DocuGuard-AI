@@ -7,19 +7,40 @@
 - **Vector DB**: Qdrant
 - **Deployment**: Docker Compose
 
-## Quick Start
+## Quick Start with Docker
 
-1. Copy `.env.example` to `.env` in the root directory.
-2. Ensure you have Docker and Docker Compose installed.
-3. Run `docker-compose up --build` to start all services.
+1.  **Configure Environment Variables**:
+    Copy `.env.docker` to `.env`:
+    ```bash
+    cp .env.docker .env
+    ```
+    Edit `.env` and provide your `OPENAI_API_KEY`.
 
-### Services Overview
+2.  **Build and Start**:
+    ```bash
+    docker-compose up --build
+    ```
+
+3.  **Setup Database (Migrations)**:
+    Once the services are running, apply the database schema:
+    ```bash
+    docker-compose exec backend alembic upgrade head
+    ```
+
+4.  **Seed Initial Data (Optional)**:
+    To populate the system with test users and sample logs:
+    ```bash
+    docker-compose exec backend python seed.py
+    ```
+
+### Services Access
 - **Frontend**: http://localhost:3000
-- **Backend**: http://localhost:8000
-- **PostgreSQL**: localhost:5432
-- **Qdrant**: localhost:6333
+- **Backend API**: http://localhost:8000
+- **API Documentation (Swagger)**: http://localhost:8000/docs
+- **Qdrant Dashboard**: http://localhost:6333/dashboard
 
-### Development
-- The backend is set to reload on code changes.
-- Ensure to run Alembic migrations in the backend for DB setup:
-  `cd backend && alembic upgrade head`
+## Development
+
+-   **Backend Hot Reload**: The backend container is configured to sync local changes (excluding `uploads/`) for rapid development.
+-   **Persistent Data**: Database records and vector embeddings are persisted in Docker volumes (`postgres_data`, `qdrant_data`).
+-   **Logs**: View logs for all services with `docker-compose logs -f`.
