@@ -1,0 +1,1 @@
+Enterprise RAG assistant: grounded Q&A over PDF/DOCX with Qdrant + OpenAI, FastAPI & Next.js. RBAC, citation verification, confidence/risk scoring, prompt-injection defense, admin analytics, Docker, 63+ tests.
