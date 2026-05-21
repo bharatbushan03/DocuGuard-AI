@@ -64,5 +64,7 @@ class ChatQueryResponse(BaseModel):
     risk_level: str
     risk_reason: Optional[str] = None
     requires_human_review: bool = False
+    injection_detected: bool = False
+    injection_categories: List[str] = []
     retrieved_chunks: List[RetrievedChunkSummary]
     session_id: int

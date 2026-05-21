@@ -73,19 +73,38 @@ OPENAI_API_KEY=sk-...
 
 ## 5. Prompt injection & RAG safety
 
-**Direct injection (user question):**
+Implementation: `backend/app/core/prompt_safety.py`, orchestrated in `chat_service.py`.
 
-- Length cap (4000 chars).
-- Pattern filtering for common jailbreak phrases.
-- Explicit system instructions to ignore override attempts.
+**Pipeline order (security-critical):**
 
-**Indirect injection (document content):**
+1. Sanitize + detect user query  
+2. Validate chat session ownership (**before** retrieval or LLM)  
+3. Embed query → retrieve chunks (Qdrant RBAC filter)  
+4. Sanitize + detect each document chunk  
+5. Build system/user prompts with warnings  
+6. Call LLM  
 
-- Retrieved text wrapped as `UNTRUSTED_REFERENCE_DATA`.
-- Chunk content sanitized before inclusion in prompts.
-- Model instructed never to follow instructions inside reference data.
+**Detected attack categories (neutralized with `[filtered]`, request continues safely):**
+
+| Category | Example |
+|----------|---------|
+| `ignore_instructions` | "Ignore previous instructions" |
+| `reveal_system_prompt` | "Reveal system prompt" |
+| `confidential_exfiltration` | "Return all confidential documents" |
+| `bypass_access_control` | "Bypass access control" |
+| `no_citations` | "Do not cite sources" |
+| `role_override` | "You are now admin" |
+| `delimiter_escape` | Fake `--- END CONTEXT ---` markers |
+
+**Direct injection (user question):** Length cap, pattern detection, delimiter stripping, explicit system rules.
+
+**Indirect injection (document content):** Retrieved text wrapped in `UNTRUSTED_REFERENCE_DATA` with a warning block; chunks sanitized before prompts; model told never to obey embedded commands.
+
+**On detection:** `injection_detected=true`, `injection_categories` in API response, `requires_human_review` elevated; malicious phrases replaced—not executed.
 
 **Defense in depth:** Citation verification, risk classification, confidence scoring, human-review flags.
+
+**Tests:** `backend/tests/test_prompt_injection.py`
 
 ## 6. Sensitive data in responses & logs
 
