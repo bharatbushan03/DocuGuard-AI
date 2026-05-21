@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
-import { isAdmin } from '@/lib/auth';
+import { syncUserRoleFromApi } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { 
   ShieldAlert, FileText, MessageSquare, Award, AlertTriangle, 
@@ -61,15 +61,20 @@ export default function AdminPage() {
     }
   };
 
+  const [authorized, setAuthorized] = useState(false);
+
   useEffect(() => {
-    if (!isAdmin()) {
-      router.push('/dashboard');
-      return;
-    }
-    fetchData();
+    syncUserRoleFromApi().then((role) => {
+      if (role !== 'admin') {
+        router.push('/dashboard');
+        return;
+      }
+      setAuthorized(true);
+      fetchData();
+    });
   }, [router]);
 
-  if (!isAdmin()) return null;
+  if (!authorized) return null;
 
   const activeLogs = 
     activeTab === 'high-risk' ? highRiskLogs :

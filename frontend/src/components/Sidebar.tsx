@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileText, MessageSquare, ShieldAlert } from 'lucide-react';
-import { isAdmin } from '@/lib/auth';
+import { syncUserRoleFromApi } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
@@ -10,7 +10,7 @@ export default function Sidebar() {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
 
   useEffect(() => {
-    setIsUserAdmin(isAdmin());
+    syncUserRoleFromApi().then((role) => setIsUserAdmin(role === 'admin'));
   }, []);
 
   const links = [

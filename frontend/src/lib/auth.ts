@@ -28,3 +28,17 @@ export const isAuthenticated = () => {
 export const isAdmin = () => {
   return getUserRole() === 'admin';
 };
+
+/** Refresh role from the API (authoritative; do not trust client-only values). */
+export const syncUserRoleFromApi = async (): Promise<string | null> => {
+  const api = (await import('./api')).default;
+  try {
+    const res = await api.get('/api/auth/me');
+    const role = res.data.role as string;
+    Cookies.set(USER_ROLE_KEY, role, { expires: 1 });
+    return role;
+  } catch {
+    removeAuthToken();
+    return null;
+  }
+};

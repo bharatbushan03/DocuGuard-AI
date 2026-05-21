@@ -7,7 +7,6 @@ def test_register_user(client):
         json={
             "email": "test@example.com",
             "password": "password123",
-            "full_name": "Test User"
         }
     )
     assert response.status_code == 200
@@ -22,7 +21,6 @@ def test_login_user(client):
         json={
             "email": "login@example.com",
             "password": "password123",
-            "full_name": "Login User"
         }
     )
     
@@ -46,7 +44,6 @@ def test_login_wrong_password(client):
         json={
             "email": "wrong@example.com",
             "password": "password123",
-            "full_name": "Wrong User"
         }
     )
     

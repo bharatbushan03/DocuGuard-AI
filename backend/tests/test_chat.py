@@ -5,11 +5,11 @@ from app.core.config import settings
 def auth_header(client):
     client.post(
         f"{settings.API_V1_STR}/auth/register",
-        json={"email": "chat@example.com", "password": "pass", "full_name": "Chat User"}
+        json={"email": "chat@example.com", "password": "password123"},
     )
     response = client.post(
         f"{settings.API_V1_STR}/auth/login",
-        data={"username": "chat@example.com", "password": "pass"}
+        data={"username": "chat@example.com", "password": "password123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

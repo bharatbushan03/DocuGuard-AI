@@ -8,7 +8,7 @@ def admin_header(client, db):
     from app.core.security import get_password_hash
     admin = User(
         email="admin@example.com",
-        hashed_password=get_password_hash("adminpass"),
+        hashed_password=get_password_hash("adminpass1"),
         full_name="Admin User",
         role="admin"
     )
@@ -18,20 +18,27 @@ def admin_header(client, db):
     
     response = client.post(
         f"{settings.API_V1_STR}/auth/login",
-        data={"username": "admin@example.com", "password": "adminpass"}
+        data={"username": "admin@example.com", "password": "adminpass1"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture
-def user_header(client):
-    client.post(
-        f"{settings.API_V1_STR}/auth/register",
-        json={"email": "user@example.com", "password": "userpass", "full_name": "Regular User"}
+def user_header(client, db):
+    from app.core.security import get_password_hash
+
+    user = User(
+        email="user@example.com",
+        hashed_password=get_password_hash("userpass1"),
+        role="user",
     )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
     response = client.post(
         f"{settings.API_V1_STR}/auth/login",
-        data={"username": "user@example.com", "password": "userpass"}
+        data={"username": "user@example.com", "password": "userpass1"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

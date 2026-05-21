@@ -1,47 +1,153 @@
-# DocuGuard AI Security Model
+# DocuGuard AI — Security Model
 
-This document outlines the security architecture and measures implemented in DocuGuard AI to protect enterprise data and ensure system integrity.
+This document describes how DocuGuard AI protects enterprise documents, user data, and AI interactions. It reflects the **implemented** controls in this repository.
 
-## 1. Authentication & Authorization
+## Threat model (summary)
 
-### JWT Authentication
-- DocuGuard AI uses JSON Web Tokens (JWT) for stateless authentication.
-- Tokens are signed with `HS256` and have a default expiration of 24 hours.
-- Users must provide their credentials (email/password) to receive a token via the `/auth/login` endpoint.
+| Threat | Mitigation |
+|--------|------------|
+| Privilege escalation at registration | Roles are server-assigned (`user` only); clients cannot set `role` |
+| Unauthorized document access | ORM filters + per-document checks + Qdrant metadata filters |
+| Cross-user chat session access | Session ownership verified before read/write |
+| Prompt injection (direct) | Delimiters, sanitization, system rules, JSON-only output |
+| Prompt injection (indirect, via uploads) | Context treated as untrusted data; chunk sanitization |
+| Sensitive chunk leakage to clients | API returns metadata + short previews only |
+| JWT forgery / weak secrets | HS256 + production validation of `SECRET_KEY` |
+| File upload malware / spoofing | Magic-byte validation, size limits, UUID storage paths |
+| Open Qdrant/Postgres on LAN | Docker binds DB/vector ports to `127.0.0.1` only |
+| SQL injection | SQLAlchemy ORM (parameterized queries) |
+| Over-broad CORS | Explicit origins, limited methods/headers |
 
-### Role-Based Access Control (RBAC)
-- **Roles:** `admin`, `hr`, `legal`, `employee`, `user`.
-- **Enforcement:** Middleware (`require_role`) protects sensitive API endpoints.
-- **Document Access:** 
-    - `admin` can access all documents.
-    - Other roles can only access documents they uploaded or those marked as `public`.
+## 1. Authentication & JWT
 
-## 2. Data Protection
+- **Mechanism:** OAuth2 password flow → JWT (`HS256`), subject = user ID.
+- **Token lifetime:** Configurable via `ACCESS_TOKEN_EXPIRE_MINUTES` (default 24h).
+- **Login response** includes `role` from the database (not client-supplied).
+- **Production:** Set `APP_ENV=production` and a `SECRET_KEY` of at least 32 random characters. Startup validation rejects known insecure defaults.
 
-### File Upload Security
-- **Filename Sanitization:** All uploaded files are renamed to a random UUID to prevent path traversal and filename collisions.
-- **Storage:** Files are stored in a dedicated `uploads/` directory, which should be protected by server-level permissions.
-- **Validation:** File size is capped at 10MB, and MIME types are restricted to PDF, DOCX, TXT, and MD.
+```bash
+# Required in production
+APP_ENV=production
+SECRET_KEY=<openssl rand -hex 32>
+OPENAI_API_KEY=sk-...
+```
 
-### Retrieval-Augmented Generation (RAG) Security
-- **Metadata Filtering:** Every query to the vector database (Qdrant) includes a strict filter based on the user's ID and role. This ensures users never retrieve "context" from documents they aren't authorized to see.
-- **Prompt Injection Protection:** User questions are clearly delimited within LLM prompts. Explicit system instructions command the model to ignore any instructions embedded within the user's question or the document context.
+**Limitations:** No refresh tokens, revocation list, or MFA (planned hardening).
 
-### Database Security
-- **SQL Injection:** All database interactions use the SQLAlchemy ORM, which automatically parameterizes queries to prevent SQL injection.
-- **Encryption:** Passwords are hashed using `bcrypt` with a unique salt before storage.
+## 2. Role-based access control (RBAC)
 
-## 3. Network & Infrastructure
+| Role | Upload documents | View all documents | Admin dashboard |
+|------|------------------|--------------------|-----------------|
+| `admin` | Yes | Yes | Yes |
+| `hr`, `legal`, `employee` | Yes | Own + `public` only | No |
+| `user` | No | Own + `public` only | No |
 
-### CORS Configuration
-- Cross-Origin Resource Sharing (CORS) is restricted to the specific frontend URL (default: `http://localhost:3000`).
+- Enforced via `require_role()` on routes.
+- **Registration** always creates `user` role (`backend/app/crud/crud_user.py`).
+- Elevated roles must be assigned by an administrator (DB/seed), not via the public API.
 
-### Environment Variables
-- Sensitive configurations (OpenAI API keys, Database URLs, JWT Secret) are managed through environment variables.
-- Default insecure values are provided for local development but **must** be overridden in production.
+## 3. Document access control
 
-## 4. Known Limitations & Future Work
+**PostgreSQL (listing & detail):**
 
-- **Virus Scanning:** Current implementation does not scan uploaded files for malware. It is recommended to add a virus scanning service (e.g., ClamAV) in a production environment.
-- **Audit Logging:** While basic query logging is implemented, a comprehensive tamper-proof audit log for all administrative actions is planned for future releases.
-- **Rate Limiting:** API rate limiting is not currently implemented and should be added to prevent DoS attacks.
+- Admins: all documents.
+- Others: `uploaded_by == user.id` OR `access_level == "public"`.
+
+**Qdrant (RAG retrieval):**
+
+- Admins: unfiltered search.
+- Others: filter `should` match `access_level=public` OR `uploaded_by=user_id`.
+
+**Access levels:** `private` (default), `public`. Levels like `internal` / `confidential` are reserved for future policy engines.
+
+## 4. File upload security
+
+| Control | Implementation |
+|---------|----------------|
+| Max size | 10 MB |
+| Allowed types | PDF, DOCX, TXT, MD |
+| Type verification | Magic-byte / UTF-8 validation (`app/core/file_validation.py`) — not client `Content-Type` alone |
+| Storage path | UUID filename under `uploads/` |
+| PDF limits | Max 500 pages |
+| Virus scan | **Not implemented** — add ClamAV or cloud scanning in production |
+
+## 5. Prompt injection & RAG safety
+
+**Direct injection (user question):**
+
+- Length cap (4000 chars).
+- Pattern filtering for common jailbreak phrases.
+- Explicit system instructions to ignore override attempts.
+
+**Indirect injection (document content):**
+
+- Retrieved text wrapped as `UNTRUSTED_REFERENCE_DATA`.
+- Chunk content sanitized before inclusion in prompts.
+- Model instructed never to follow instructions inside reference data.
+
+**Defense in depth:** Citation verification, risk classification, confidence scoring, human-review flags.
+
+## 6. Sensitive data in responses & logs
+
+| Surface | Policy |
+|---------|--------|
+| Chat API `retrieved_chunks` | Metadata + `content_preview` (≤120 chars), no full chunk bodies |
+| Query logs (DB) | Chunk metadata only (no full content) |
+| Admin log APIs | Redacted chunk payloads, capped at 200 rows |
+| Application logs | User IDs and error types; no passwords, tokens, or full document text |
+
+## 7. Chat session isolation
+
+- Each `session_id` must belong to `current_user.id`.
+- Invalid or foreign sessions return **403 Forbidden**.
+
+## 8. CORS
+
+- Origins from `BACKEND_CORS_ORIGINS` (JSON array or comma-separated).
+- Methods: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`.
+- Headers: `Authorization`, `Content-Type`, `Accept`.
+- Credentials enabled for cookie-based frontend auth.
+
+## 9. Environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `SECRET_KEY` | JWT signing |
+| `OPENAI_API_KEY` | Embeddings & chat |
+| `POSTGRES_*` | Database |
+| `QDRANT_URL` | Vector store (internal Docker network) |
+| `BACKEND_CORS_ORIGINS` | Allowed browser origins |
+| `APP_ENV` | `development` \| `production` (enables secret validation) |
+| `ALLOW_PUBLIC_REGISTRATION` | Disable open signup when `false` |
+
+Never commit `.env` files. Use `.env.docker` as a template only.
+
+## 10. Infrastructure (Docker)
+
+- **Postgres** and **Qdrant** published on `127.0.0.1` only — not exposed on all interfaces.
+- **Qdrant** has no application-level API key; network isolation is required.
+- Uploads use the `docuguard_uploads_data` volume.
+
+## 11. SQL injection
+
+All application queries use SQLAlchemy ORM. No dynamic SQL concatenation in route handlers.
+
+## 12. Dependencies
+
+- Backend: pinned ranges in `backend/requirements.txt`.
+- Frontend: pinned in `package.json` / lockfile.
+- Run `pip audit` and `npm audit` before production releases.
+
+## 13. Reporting vulnerabilities
+
+If you discover a security issue, report it privately to the repository maintainers. Do not open public issues for undisclosed vulnerabilities.
+
+## 14. Known gaps & roadmap
+
+- [ ] API rate limiting
+- [ ] Malware scanning on upload
+- [ ] JWT refresh + revocation
+- [ ] MFA for admin accounts
+- [ ] Qdrant API key / mTLS
+- [ ] Tamper-evident audit logging
+- [ ] Automated dependency scanning in CI

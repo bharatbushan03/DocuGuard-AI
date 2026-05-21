@@ -9,6 +9,7 @@ from app.db.session import SessionLocal
 from app.services.chunking import chunk_text
 from app.services.embedding import embed_batch
 from app.services.vector_db import store_vectors
+from app.core.file_validation import ALLOWED_MIME_TO_EXT, validate_upload_content
 import logging
 import uuid
 
@@ -16,12 +17,8 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = "uploads"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_MIME_TYPES = {
-    "application/pdf": "pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-    "text/plain": "txt",
-    "text/markdown": "md"
-}
+ALLOWED_MIME_TYPES = ALLOWED_MIME_TO_EXT
+MAX_PDF_PAGES = 500
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -30,6 +27,9 @@ def extract_pages_from_file(file_path: str, mime_type: str) -> list:
     try:
         if mime_type == "application/pdf":
             doc = fitz.open(file_path)
+            if doc.page_count > MAX_PDF_PAGES:
+                doc.close()
+                raise ValueError(f"PDF exceeds maximum page limit ({MAX_PDF_PAGES}).")
             for i, page in enumerate(doc):
                 pages.append({"text": page.get_text(), "page_number": i + 1})
             doc.close()
@@ -44,37 +44,43 @@ def extract_pages_from_file(file_path: str, mime_type: str) -> list:
             raise ValueError("Unsupported file type for extraction")
         return pages
     except Exception as e:
-        logger.error(f"Error extracting text from {file_path}: {e}")
+        logger.error("Error extracting text from document_id path=%s: %s", file_path, e)
         raise e
 
 def save_uploaded_file(file: UploadFile, user_id: int, db: Session) -> Document:
-    # 1. Validation
-    if file.content_type not in ALLOWED_MIME_TYPES:
+    declared_mime = file.content_type or ""
+    if declared_mime not in ALLOWED_MIME_TYPES:
         raise HTTPException(status_code=400, detail="Unsupported file type.")
-    
+
     file.file.seek(0, 2)
     file_size = file.file.tell()
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large. Max size is 10MB.")
     file.file.seek(0)
 
-    # 2. Save File
-    # Use UUID for the actual file name to prevent path traversal and collisions
-    file_extension = ALLOWED_MIME_TYPES[file.content_type]
+    content = file.file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Max size is 10MB.")
+
+    try:
+        verified_mime, file_extension = validate_upload_content(content, declared_mime)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     safe_filename = f"{uuid.uuid4()}.{file_extension}"
     file_path = os.path.join(UPLOAD_DIR, safe_filename)
     try:
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(content)
     except Exception as e:
-        logger.error(f"Failed to save file: {e}")
+        logger.error("Failed to save upload for user_id=%s: %s", user_id, e)
         raise HTTPException(status_code=500, detail="Could not save file.")
 
     # 3. Create initial DB record
     db_doc = Document(
         title=file.filename, # Keep original filename as title
         filename=safe_filename, # Safe filename for storage
-        file_type=file.content_type,
+        file_type=verified_mime,
         access_level="private",
         uploaded_by=user_id,
         status="uploaded"
@@ -163,7 +169,7 @@ def process_document_background(document_id: int, file_path: str):
         logger.info(f"Successfully processed document {document_id}")
 
     except Exception as e:
-        logger.error(f"Processing failed for document {document_id}: {e}")
+        logger.error("Processing failed for document_id=%s: %s", document_id, e)
         db_doc = db.query(Document).filter(Document.id == document_id).first()
         if db_doc:
             db_doc.status = "failed"

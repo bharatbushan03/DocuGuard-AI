@@ -7,7 +7,7 @@ def auth_header(client, db):
     # Register first
     client.post(
         f"{settings.API_V1_STR}/auth/register",
-        json={"email": "doc@example.com", "password": "pass", "full_name": "Doc User"}
+        json={"email": "doc@example.com", "password": "password123"},
     )
     # Manually update role to employee in DB because register defaults to user
     from app.models.user import User
@@ -17,7 +17,7 @@ def auth_header(client, db):
     
     response = client.post(
         f"{settings.API_V1_STR}/auth/login",
-        data={"username": "doc@example.com", "password": "pass"}
+        data={"username": "doc@example.com", "password": "password123"},
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

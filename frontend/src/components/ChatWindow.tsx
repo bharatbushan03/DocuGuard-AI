@@ -13,7 +13,7 @@ interface RetrievedChunk {
   chunk_id: number;
   filename: string;
   page_number: number;
-  content: string;
+  content_preview?: string;
   access_level?: string;
 }
 
@@ -187,7 +187,7 @@ export default function ChatWindow() {
                                 <span>{chunk.filename} (Page {chunk.page_number})</span>
                                 <span className="bg-slate-200/60 px-1.5 py-0.5 rounded">Score: {(chunk.score * 100).toFixed(0)}%</span>
                               </div>
-                              <SourceSnippet content={chunk.content} />
+                              <SourceSnippet content={chunk.content_preview || ''} />
                             </div>
                           ))}
                         </div>

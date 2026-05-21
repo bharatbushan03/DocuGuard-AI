@@ -25,6 +25,7 @@ def test_extract_text_pdf(mock_fitz_open):
     mock_page = MagicMock()
     mock_page.get_text.return_value = "PDF Content"
     mock_doc.__iter__.return_value = [mock_page]
+    mock_doc.page_count = 1
     mock_fitz_open.return_value = mock_doc
     
     pages = extract_pages_from_file("fake.pdf", "application/pdf")
