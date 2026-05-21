@@ -6,7 +6,8 @@ def extract_claims(text: str) -> List[str]:
     Extracts claims from text by splitting into sentences.
     MVP implementation using simple regex.
     """
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    pattern = r'(?<!\b[eE]\.[gG]\.)(?<!\b[iI]\.[eE]\.)(?<!\b[vV][sS]\.)(?<!\b[mM]r\.)(?<!\b[dD]r\.)(?<!\b[mM]s\.)(?<!\b[pP]rof\.)(?<!\b[sS]r\.)(?<!\b[jJ]r\.)(?<!\b[cC]o\.)(?<!\b[lL]td\.)(?<!\b[iI]nc\.)(?<!\b[cC]orp\.)(?<=[.!?])\s+'
+    sentences = re.split(pattern, text.strip())
     return [s.strip() for s in sentences if len(s.strip()) > 3]
 
 def get_significant_words(text: str) -> set:

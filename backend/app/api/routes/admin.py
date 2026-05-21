@@ -51,7 +51,7 @@ def get_admin_stats(
 
     failed_docs = db.query(Document).filter(Document.status == "failed").limit(5).all()
     failed_docs_list = [
-        {"id": d.id, "filename": d.filename, "created_at": d.created_at}
+        {"id": d.id, "filename": d.title, "created_at": d.created_at}
         for d in failed_docs
     ]
 

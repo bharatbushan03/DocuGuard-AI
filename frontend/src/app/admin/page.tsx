@@ -283,7 +283,7 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {log.confidence_score !== null ? (
-                            <span className={`text-xs font-bold ${log.confidence_score < 0.45 ? 'text-red-650' : 'text-slate-600'}`}>
+                            <span className={`text-xs font-bold ${log.confidence_score < 0.45 ? 'text-red-600' : 'text-slate-600'}`}>
                               {(log.confidence_score * 100).toFixed(0)}%
                             </span>
                           ) : (

@@ -87,7 +87,7 @@ export default function DocumentTable({ documents }: DocumentTableProps) {
                     <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                       <FileText className="w-5 h-5" />
                     </div>
-                    <span className="text-sm font-semibold text-slate-900 truncate max-w-xs">{doc.filename}</span>
+                    <span className="text-sm font-semibold text-slate-900 truncate max-w-xs">{doc.title}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">

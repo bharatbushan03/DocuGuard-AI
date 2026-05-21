@@ -116,7 +116,7 @@ def process_document_background(document_id: int, file_path: str):
             chunks_data = chunk_text(
                 text=page["text"],
                 document_id=db_doc.id,
-                filename=db_doc.filename,
+                filename=db_doc.title,
                 page_number=page.get("page_number"),
                 start_chunk_index=chunk_index
             )

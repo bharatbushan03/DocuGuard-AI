@@ -186,7 +186,7 @@ def process_chat_query(db: Session, request: ChatQueryRequest, current_user: Use
 
     confidence_score = calculate_confidence(chunks, citation_coverage, answer)
 
-    if confidence_score < 0.45:
+    if is_supported and confidence_score < 0.45:
         requires_human_review = True
         risk_reason += " (Low confidence score, human review recommended)"
         if "human review is recommended" not in answer.lower():
