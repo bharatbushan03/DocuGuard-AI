@@ -115,3 +115,4 @@ DocuGuard-AI/
   - Testing (Unit tests for parsing/RAG, integration tests).
   - Finalize Dockerfiles for production deployment.
   - Documentation and handover.
+# Maintenance commit 2
