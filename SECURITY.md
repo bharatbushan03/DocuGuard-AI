@@ -170,4 +170,3 @@ If you discover a security issue, report it privately to the repository maintain
 - [ ] Qdrant API key / mTLS
 - [ ] Tamper-evident audit logging
 - [ ] Automated dependency scanning in CI
-# Maintenance commit 3

@@ -43,4 +43,3 @@ api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-# Maintenance commit 4
