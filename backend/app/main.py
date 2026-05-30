@@ -14,6 +14,10 @@ app = FastAPI(
     version="1.0.0",
     description="DocuGuard AI Enterprise Assistant API",
 )
+"""
+The main FastAPI application instance for DocuGuard AI.
+Handles routing, middleware, and dependency injection.
+"""
 
 if settings.SECRET_KEY in INSECURE_SECRET_KEYS:
     logger.warning(
