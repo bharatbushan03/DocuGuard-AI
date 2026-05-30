@@ -11,6 +11,8 @@ from app.schemas.log import QueryLogResponse
 
 router = APIRouter()
 
+# TODO: Implement more robust logging and telemetry for admin actions
+
 
 def _sanitize_log(log: QueryLog) -> dict:
     data = {
