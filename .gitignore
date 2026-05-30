@@ -17,6 +17,7 @@ venv/
 ENV/
 env/
 .env
+*.log
 
 # OS
 .DS_Store
