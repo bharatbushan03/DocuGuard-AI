@@ -89,6 +89,11 @@ DocuGuard-AI/
 - The backend parses the LLM output, maps `[chunk_id]` back to the actual document and page, and returns a structured list of references alongside the text.
 - The frontend renders these as clickable tooltips or footnotes linking to the original document.
 
+### 11. Security Layer Details
+- **Input Sanitization**: All user queries are stripped of HTML tags and control characters.
+- **Rate Limiting**: (Planned) Implement Redis-based rate limiting per API key.
+- **Audit Logging**: Every RAG transaction is logged with its risk score.
+
 ### 10. Development Milestones
 - **Phase 1: Foundation (Week 1)**
   - Setup Docker Compose with PostgreSQL and Qdrant.
