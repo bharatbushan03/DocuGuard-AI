@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "DocuGuard AI"
     API_V1_STR: str = "/api"
     APP_ENV: str = "development"  # development | production
+    DEBUG_MODE_ENABLED: bool = False
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000"]
