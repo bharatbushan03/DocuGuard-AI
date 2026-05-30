@@ -484,12 +484,13 @@ DocuGuard implements defense-in-depth for enterprise document AI. Full details: 
 - [ ] Document delete with vector cleanup  
 - [ ] SSO (OIDC/SAML) integration  
 - [ ] CI pipeline with `pip audit`, `npm audit`, and evaluation gates  
-- [ ] Streaming chat responses (SSE)  
-- [ ] Multi-tenant organization workspaces  
-
 ---
 
-## 15. Resume Bullet Points
+## Changelog
+
+### [v1.0.1] - 2026-05-30
+- Initial commit spree experiment.
+- Added dummy constants and components for testing.
 
 See **[PORTFOLIO.md §3](PORTFOLIO.md#3-resume-bullet-points-5)** for five polished, ATS-ready bullets.
 
